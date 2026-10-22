@@ -84,6 +84,10 @@ Licence MIT (his own code, he agreed). WikiTips stays only help + error explanat
   "first empty space" count from there. Old 1.0.x holes get the new properties in `onDocumentRestored`
   (Position Κλικ: unchanged; fixture `tests/fixtures/hole_1_0_1.FCStd`). A sketch picked in the tree inside a
   Body comes as the Body in getSelectionEx: `_picked` falls back to getSelection().
+- 1.1.1 (Marios: + / − kept moving; height must start at the part's middle): `AxisCentre` is now at the middle
+  of the part along the axis (bounding box), so Height 0 = the middle (1.1.0 holes keep their saved centre).
+  The panel debounces every change (QTimer 400 ms, keyboard tracking off): a recompute blocked the event loop,
+  the spin box's auto-repeat never saw the mouse release. Step combo 0.1/0.5/1/5 mm, "Στη μέση", height span.
 - On his pulley file (headless): angle 90°, height 8, 2 holes towards the axis -> open from r 21.5 to the bore at
   90° and 270°, untouched at 0°.
 - Not done (Marios: only a plain hole for now): screw holes M3/M4/M5, counterbore, nut pocket.

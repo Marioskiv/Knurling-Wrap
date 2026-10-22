@@ -287,7 +287,8 @@ def run_more():
     from knurlwrap import knurl as wk
 
     # A1. "angle and height" on a tube (r 22, bore 7, 20 high): click the top, switch in the panel to
-    # angle 30°, height 10, towards the axis, 2 holes: radial holes at 30° and 210°, through the wall
+    # angle 30°, height 0 (= the middle of the part, Z 10), towards the axis, 2 holes: radial holes at
+    # 30° and 210°, through the wall
     d = App.newDocument("Radial")
     b, pad = cylinder_body(d, r=22, h=20, bore=7)
     Gui.activeView().viewIsometric()
@@ -297,13 +298,26 @@ def run_more():
     check(h is not None and h.Position == "Κλικ", "clicked hole made (Position Κλικ)")
     if h is None:
         return
-    check((V(h.AxisCentre) - V(0, 0, 0)).Length < 1e-6 and h.Axis == "Z", "axis found: Z through the centre")
+    check((V(h.AxisCentre) - V(0, 0, 10)).Length < 1e-6 and h.Axis == "Z" and abs(h.Height.Value - 10) < 1e-6,
+          "axis found: Z through the centre, height 0 = the middle (Z 10); the click at Z 20 is height 10")
     panel = wh.TaskHole(h)
     check(not panel.radial.isVisible() or panel.radial.isHidden(), "angle box hidden for a clicked hole")
+    check("-10.00 έως 10.00" in panel.span.text(), "panel shows the part's height span (%s)" % panel.span.text())
     panel.pos.setCurrentText("Γωνία και ύψος")
     panel.angle.setValue(30)
-    panel.height.setValue(10)
     panel.count.setValue(2)
+    pump(800)
+    panel.hstep.setCurrentText("1 mm")
+    check(panel.height.singleStep() == 1.0, "height step 1 mm")
+    before = h.Shape.Volume
+    for _i in range(7):                       # quick + + + ... : nothing is recomputed meanwhile
+        panel.height.stepDown()
+    pump(100)
+    check(abs(h.Shape.Volume - before) < 1e-9 and abs(h.Height.Value - 10) < 1e-6,
+          "quick clicks on -: no recompute until a pause")
+    pump(800)
+    check(abs(h.Height.Value - 3) < 1e-6, "after the pause: height 10 - 7 = 3 (%s)" % h.Height)
+    panel.middle.click()
     pump(800)
     check(not panel.radial.isHidden() and h.Count == 2 and "Invalid" not in h.State,
           "panel: angle and height, 2 holes (%s)" % h.State)
@@ -341,7 +355,7 @@ def run_more():
     d.recompute()
     top = pad.Shape.getElement(face_name(pad, lambda f: abs(f.CenterOfMass.z - 10) < 1e-6))
     h, _br = wh.make_hole(pad, top, V(5, 0, 10), mode="Βάθος", depth=4)
-    h.Position, h.Angle, h.Height, h.Aim = "Γωνία και ύψος", 10, 5, "Κάθετα στην επιφάνεια"
+    h.Position, h.Angle, h.Height, h.Aim = "Γωνία και ύψος", 10, 0, "Κάθετα στην επιφάνεια"
     d.recompute()
     n30 = V(math.cos(math.radians(30)), math.sin(math.radians(30)), 0)
     entry = None
@@ -361,9 +375,9 @@ def run_more():
     w.Shape = Part.makeCylinder(10, 10, V(5, 3, 0)).cut(Part.makeCylinder(3, 10, V(5, 3, 0)))
     d.recompute()
     h, _br = wh.make_hole(w, next(f for f in w.Shape.Faces if abs(f.CenterOfMass.z - 10) < 1e-6), V(12, 3, 10))
-    check((V(h.AxisCentre) - V(5, 3, 0)).Length < 1e-6 and abs(h.Angle.Value) < 1e-6
-          and abs(h.Height.Value - 10) < 1e-6,
-          "off-centre round part: axis (5, 3), angle 0, height 10 from the click (%s %s %s)"
+    check((V(h.AxisCentre) - V(5, 3, 5)).Length < 1e-6 and abs(h.Angle.Value) < 1e-6
+          and abs(h.Height.Value - 5) < 1e-6,
+          "off-centre round part: axis (5, 3) middle Z 5, angle 0, height 5 from the click (%s %s %s)"
           % (h.AxisCentre, h.Angle, h.Height))
     App.closeDocument(d.Name)
 

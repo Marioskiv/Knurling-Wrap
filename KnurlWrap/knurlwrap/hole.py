@@ -171,8 +171,9 @@ def axis_frame(axis):
 
 
 def axis_centre(shape, axis):
-    """A point of the part's own axis, at height 0: the axis of its biggest cylindrical face along
-    `axis` (a pulley's hub, a shaft), else the middle of its bounding box across the axis."""
+    """A point of the part's own axis, at the middle of the part along it (height 0 = the middle):
+    the axis of its biggest cylindrical face along `axis` (a pulley's hub, a shaft), else the middle
+    of its bounding box across the axis."""
     a = axis_frame(axis)[0]
     best = None
     for f in shape.Faces:
@@ -181,7 +182,16 @@ def axis_centre(shape, axis):
             if best is None or s.Radius > best[0]:
                 best = (s.Radius, V(s.Center))
     c = best[1] if best is not None else V(shape.BoundBox.Center)
-    return c - a * c.dot(a)
+    return c - a * c.dot(a) + a * V(shape.BoundBox.Center).dot(a)
+
+
+def extent(shape, centre, axis):
+    """(lowest, highest) height of the part along the axis, measured from `centre`."""
+    a = axis_frame(axis)[0]
+    bb = shape.BoundBox
+    hs = [(V(x, y, z) - centre).dot(a) for x in (bb.XMin, bb.XMax) for y in (bb.YMin, bb.YMax)
+          for z in (bb.ZMin, bb.ZMax)]
+    return min(hs), max(hs)
 
 
 def angle_height(point, centre, axis):
@@ -348,7 +358,8 @@ def add_properties(obj):
     _add(obj, "App::PropertyVector", "AxisCentre", "Angle and height", "Ένα σημείο του άξονα (το κέντρο)")
     _add(obj, "App::PropertyAngle", "Angle", "Angle and height",
          "Γωνία γύρω από τον άξονα (Z: 0 = +X, 90 = +Y)", 0.0)
-    _add(obj, "App::PropertyDistance", "Height", "Angle and height", "Ύψος κατά μήκος του άξονα", 0.0)
+    _add(obj, "App::PropertyDistance", "Height", "Angle and height",
+         "Ύψος κατά μήκος του άξονα, από το AxisCentre (για νέες τρύπες: 0 = η μέση του κομματιού)", 0.0)
     _add(obj, "App::PropertyEnumeration", "Aim", "Angle and height",
          "Η τρύπα δείχνει στον άξονα (κέντρο) ή είναι κάθετη στην επιφάνεια που συναντά", AIMS)
     _add(obj, "App::PropertyInteger", "Count", "Angle and height", "Πόσες τρύπες γύρω-γύρω", 1)
@@ -456,8 +467,11 @@ if App.GuiUp:
     except ImportError:  # pragma: no cover
         QtWidgets = QtGui
 
+    from PySide import QtCore
+
     from . import knurl as wk
 
+    STEPS = ["0.1", "0.5", "1", "5"]
     SAVED = ("Diameter", "Mode", "Depth", "Position", "Axis", "AxisCentre", "Angle", "Height", "Aim", "Count",
              "AngleStep", "Reversed")
 
@@ -468,6 +482,7 @@ if App.GuiUp:
         s.setSingleStep(step)
         s.setSuffix(suffix)
         s.setValue(value)
+        s.setKeyboardTracking(False)        # typing a number: one update when done, not one per digit
         return s
 
     class TaskHole:
@@ -505,6 +520,19 @@ if App.GuiUp:
             self.angle = _spin(-360, 360, obj.Angle.Value, " °", step=5)
             self.angle.setToolTip("Άξονας Z: 0° = προς +X, 90° = προς +Y (αριστερόστροφα, βλέποντας από πάνω).")
             self.height = _spin(-10000, 10000, obj.Height.Value, " mm", step=0.5)
+            self.height.setToolTip("0 = η μέση του κομματιού. Με + πάει προς τη μύτη του άξονα (Z: προς τα πάνω).")
+            self.hstep = QtWidgets.QComboBox()
+            self.hstep.addItems([x + " mm" for x in STEPS])
+            self.hstep.setCurrentIndex(1)
+            self.hstep.setToolTip("Πόσο αλλάζει το ύψος με κάθε + / −.")
+            self.middle = QtWidgets.QPushButton("Στη μέση")
+            self.middle.setToolTip("Ύψος 0: η τρύπα ακριβώς στη μέση του κομματιού.")
+            hrow = QtWidgets.QHBoxLayout()
+            hrow.addWidget(self.height, 1)
+            hrow.addWidget(QtWidgets.QLabel("βήμα"))
+            hrow.addWidget(self.hstep)
+            hrow.addWidget(self.middle)
+            self.span = QtWidgets.QLabel()
             self.aim = QtWidgets.QComboBox()
             self.aim.addItems(AIMS)
             self.aim.setCurrentText(obj.Aim)
@@ -515,7 +543,8 @@ if App.GuiUp:
             self.step.setToolTip("0 = ίσα μοιρασμένες γύρω-γύρω (π.χ. 2 τρύπες = 180°).")
             rl.addRow("Άξονας", self.axis)
             rl.addRow("Γωνία", self.angle)
-            rl.addRow("Ύψος", self.height)
+            rl.addRow("Ύψος", hrow)
+            rl.addRow("", self.span)
             rl.addRow("Κατεύθυνση", self.aim)
             rl.addRow("Πόσες τρύπες", self.count)
             rl.addRow("Γωνία ανάμεσα", self.step)
@@ -529,14 +558,39 @@ if App.GuiUp:
             sl.addWidget(self.rev)
             top.addWidget(self.sk)
 
+            # every change waits until the user stops for a moment: while FreeCAD recomputes it does not
+            # see the mouse let go of + / -, and the box kept counting on its own (Marios, 2026-10-22)
+            self.timer = QtCore.QTimer(self.form)
+            self.timer.setSingleShot(True)
+            self.timer.setInterval(400)
+            self.timer.timeout.connect(self.preview)
             for w in (self.dia, self.depth, self.angle, self.height, self.step):
-                w.valueChanged.connect(self.preview)
-            self.count.valueChanged.connect(self.preview)
+                w.valueChanged.connect(self.later)
+            self.count.valueChanged.connect(self.later)
             for w in (self.pos, self.mode, self.aim):
-                w.currentIndexChanged.connect(self.preview)
+                w.currentIndexChanged.connect(self.later)
             self.axis.currentIndexChanged.connect(self.axis_changed)
-            self.rev.toggled.connect(self.preview)
+            self.rev.toggled.connect(self.later)
+            self.hstep.currentIndexChanged.connect(self.step_changed)
+            self.middle.clicked.connect(lambda: self.height.setValue(0.0))
+            self.step_changed()
+            self.show_span()
             self.show_parts()
+
+        def later(self, *args):
+            self.show_parts()
+            self.timer.start()
+
+        def step_changed(self, *args):
+            self.height.setSingleStep(float(STEPS[self.hstep.currentIndex()]))
+
+        def show_span(self):
+            base = _base_shape(self.obj)
+            if base is None:
+                self.span.setText("")
+                return
+            lo, hi = extent(base, V(self.obj.AxisCentre), self.axis.currentText())
+            self.span.setText("Το κομμάτι: ύψος %.2f έως %.2f mm" % (lo, hi))
 
         def show_parts(self):
             pos = self.pos.currentText()
@@ -557,6 +611,7 @@ if App.GuiUp:
                     w.blockSignals(True)
                     w.setValue(val)
                     w.blockSignals(False)
+            self.show_span()
             self.preview()
 
         def preview(self, *args):
@@ -579,11 +634,13 @@ if App.GuiUp:
                 pass
 
         def accept(self):
+            self.timer.stop()
             self.preview()
             Gui.ActiveDocument.resetEdit()
             return True
 
         def reject(self):
+            self.timer.stop()
             for p, val in self.old.items():
                 setattr(self.obj, p, val)
             self.obj.Document.recompute()
