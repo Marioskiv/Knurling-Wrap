@@ -9,6 +9,7 @@ at the middle of the part and let me move it by millimetres".
 - New holes: height 0 = the middle of the part along the axis (was the axis' Z 0). The panel shows the part's
   height span, a step for + / − (0.1 / 0.5 / 1 / 5 mm) and a **Στη μέση** button. Typing a number updates once.
 - Holes made with 1.1.0 keep their place (their saved centre).
+- The same pause before recomputing in the Wrap panel (its depth + / −).
 
 ## 1.1.0 — 2026-10-22: Hole on any surface, exact position
 
