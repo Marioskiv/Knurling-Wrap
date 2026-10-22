@@ -241,13 +241,21 @@ if App.GuiUp:
             self.depth.setSingleStep(0.1)
             self.depth.setSuffix(" mm")
             self.depth.setValue(obj.Depth.Value)
+            self.depth.setKeyboardTracking(False)
             lay.addRow("Τρόπος", self.mode)
             lay.addRow("Βάθος / ύψος", self.depth)
             btn = QtWidgets.QPushButton("Άνοιξε το σκαρίφημα")
             btn.clicked.connect(self.edit_sketch)
             lay.addRow(btn)
-            self.mode.currentIndexChanged.connect(self.preview)
-            self.depth.valueChanged.connect(self.preview)
+            # recompute only after a short pause: during a recompute the + / − button does not see the
+            # mouse let go and keeps counting on its own (as in the Hole panel, 2026-10-22)
+            from PySide import QtCore
+            self.timer = QtCore.QTimer(self.form)
+            self.timer.setSingleShot(True)
+            self.timer.setInterval(400)
+            self.timer.timeout.connect(self.preview)
+            self.mode.currentIndexChanged.connect(self.timer.start)
+            self.depth.valueChanged.connect(self.timer.start)
 
         def preview(self, *args):
             try:
@@ -265,11 +273,13 @@ if App.GuiUp:
             Gui.ActiveDocument.setEdit(sk.Name)
 
         def accept(self):
+            self.timer.stop()
             self.preview()
             Gui.ActiveDocument.resetEdit()
             return True
 
         def reject(self):
+            self.timer.stop()
             Gui.ActiveDocument.resetEdit()
             return True
 
