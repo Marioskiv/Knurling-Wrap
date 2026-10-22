@@ -1,4 +1,4 @@
-# freecad-addons
+# Knurling & Wrap
 
 Εργαλεία για το FreeCAD (1.1 και νεότερο) από τον Marioskiv. Ένα πρόσθετο στο Addon Manager, MIT.
 *Tools for FreeCAD 1.1+ by Marioskiv: one addon in the Addon Manager, MIT licence.*
@@ -16,7 +16,7 @@
 ## Εγκατάσταση / Install
 
 FreeCAD → **Tools → Addon Manager** → ⚙ (ρυθμίσεις) → **Custom repositories** → πρόσθεσε
-`https://github.com/Marioskiv/freecad-addons`, branch `main` → OK. Βρες το **freecad-addons** στη λίστα →
+`https://github.com/Marioskiv/Knurling-Wrap`, branch `main` → OK. Βρες το **Knurling-Wrap** στη λίστα →
 **Install**, και ξεκίνα ξανά το FreeCAD.
 
 Αυτά τα εργαλεία ήταν πριν μέσα στο Polar CNC (`polar-cnc-converter`, ως την έκδοση 2.25.0) και ακόμα πιο πριν

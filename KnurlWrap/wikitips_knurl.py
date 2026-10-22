@@ -3,7 +3,7 @@
 # Saved again, it is stored under its new module (knurlwrap.knurl).
 #
 # Copyright (c) 2026 Marioskiv
-# https://github.com/Marioskiv/freecad-addons
+# https://github.com/Marioskiv/Knurling-Wrap
 # SPDX-License-Identifier: MIT
 
 from knurlwrap.knurl import *  # noqa: F401,F403

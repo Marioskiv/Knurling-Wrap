@@ -1,7 +1,7 @@
 # Knurling & Wrap — Wrap: draw on a cylinder (Part Design).
 #
 # Copyright (c) 2026 Marioskiv
-# https://github.com/Marioskiv/freecad-addons
+# https://github.com/Marioskiv/Knurling-Wrap
 # SPDX-License-Identifier: MIT
 """Wrap: draw on a cylinder (moved from WikiTips 2026-10-20). Not the Polar Wrap machining
 operation of Polar CNC: this one changes the 3D part.

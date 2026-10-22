@@ -1,7 +1,8 @@
 # Memory — decisions and how to test
 
 ## Decisions
-- 2026-10-22 (Marios): a separate repo for the Part Design tools, name `freecad-addons`. Knurling & Wrap moved
+- 2026-10-22 (Marios): a separate repo for the Part Design tools, name `freecad-addons`, renamed by him the same day to
+  **`Knurling-Wrap`** (GitHub allows no spaces or `&`; the old URL redirects). Knurling & Wrap moved
   here from `polar-cnc-converter` 2.25.0 (where it lived since 2026-10-20 as `cad/`; before that in WikiTips).
   Folder `KnurlWrap/` (FreeCAD adds it to `sys.path` and runs its `InitGui.py`). Version restarts at 1.0.0.
 - Hole on any surface: only a plain round hole for now (Marios 2026-10-22); details in `knurlwrap.md`.
