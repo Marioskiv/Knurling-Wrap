@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.1.0 — 2026-10-22: Hole on any surface, exact position
+
+Marios: "I can't say where the hole goes, nor make it point at the centre: it needs parameters or a sketch".
+- **Γωνία και ύψος:** an axis (Z, X or Y; the centre is found from the part's own cylinder), an angle round it, a
+  height along it; the hole points at the axis (default) or is square to the surface it meets; several holes
+  round, evenly spread or at a given angle step. A clicked hole keeps its place when switched to this.
+- **Σκαρίφημα:** select a sketch with circles and press the button: every circle is a hole of its own diameter,
+  square to the sketch, coming from the sketch's side (or the other side, *Ανάποδα*); editing the sketch moves
+  the holes.
+- Files made with 1.0.x open unchanged (their holes stay "Κλικ").
+- `README.md` here, the Greek panel and the tooltip explain the three ways.
+
 ## 1.0.1 — 2026-10-22
 
 - The repository is now `Marioskiv/Knurling-Wrap` (was `freecad-addons`); addon name `Knurling-Wrap`. No code change.
