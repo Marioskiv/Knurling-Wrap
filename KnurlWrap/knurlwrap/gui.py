@@ -1,7 +1,7 @@
 # Knurling & Wrap — the commands and their toolbar in the Part Design workbench.
 #
 # Copyright (c) 2026 Marioskiv
-# https://github.com/Marioskiv/freecad-addons
+# https://github.com/Marioskiv/Knurling-Wrap
 # SPDX-License-Identifier: MIT
 
 import FreeCAD as App

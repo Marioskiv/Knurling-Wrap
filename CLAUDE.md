@@ -8,7 +8,7 @@ honest and direct. Never claim something you have not checked.
 1. Read `docs/notes/memory.md` (decisions, how to test) and `docs/notes/pending.md` (open items).
 2. For Knurling & Wrap read `docs/notes/knurlwrap.md`.
 
-## What this repo is (Marios, 2026-10-22)
+## What this repo is (Marios, 2026-10-22; repo `Knurling-Wrap`, was `freecad-addons`)
 Part Design / general FreeCAD tools, ONE addon in the Addon Manager (`package.xml`, one `<workbench>` per tool
 folder). Today: `KnurlWrap/` (Knurl, Wrap on a cylinder, Hole on any surface). Not here: the Polar CNC CAM addon
 and the web converter (`polar-cnc-converter`), WikiTips (`freecad-wikitips`), machine files (`cnc-manuals`,

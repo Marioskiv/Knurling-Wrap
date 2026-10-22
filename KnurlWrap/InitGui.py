@@ -1,7 +1,7 @@
 # Knurling & Wrap — FreeCAD start-up: the Knurl and Wrap commands on a Part Design toolbar.
 #
 # Copyright (c) 2026 Marioskiv
-# https://github.com/Marioskiv/freecad-addons
+# https://github.com/Marioskiv/Knurling-Wrap
 # SPDX-License-Identifier: MIT
 
 try:

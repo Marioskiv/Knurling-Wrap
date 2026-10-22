@@ -1,7 +1,7 @@
 # Knurling & Wrap — Knurl: knurling on a cylinder in one click (Part Design).
 #
 # Copyright (c) 2026 Marioskiv
-# https://github.com/Marioskiv/freecad-addons
+# https://github.com/Marioskiv/Knurling-Wrap
 # SPDX-License-Identifier: MIT
 """Knurl: knurling on a cylinder in one click (moved from WikiTips 2026-10-20).
 

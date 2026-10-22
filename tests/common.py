@@ -1,8 +1,8 @@
-# freecad-addons — shared pieces of the FreeCAD tests (tests/run.sh runs each test file in its own
+# Knurling-Wrap — shared pieces of the FreeCAD tests (tests/run.sh runs each test file in its own
 # FreeCAD start).
 #
 # Copyright (c) 2026 Marioskiv
-# https://github.com/Marioskiv/freecad-addons
+# https://github.com/Marioskiv/Knurling-Wrap
 # SPDX-License-Identifier: MIT
 
 import os

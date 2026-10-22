@@ -1,7 +1,7 @@
 # Knurling & Wrap — test in a real FreeCAD (run by tests/run.sh).
 #
 # Copyright (c) 2026 Marioskiv
-# https://github.com/Marioskiv/freecad-addons
+# https://github.com/Marioskiv/Knurling-Wrap
 # SPDX-License-Identifier: MIT
 """Test "Τρύπα σε επιφάνεια" (Hole on any surface, Knurling & Wrap) inside a REAL FreeCAD.
 

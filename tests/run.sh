@@ -1,5 +1,5 @@
 #!/bin/sh
-# freecad-addons — run every test in a real FreeCAD (needs FreeCAD 1.1+ and xvfb-run).
+# Knurling-Wrap — run every test in a real FreeCAD (needs FreeCAD 1.1+ and xvfb-run).
 #
 #   FREECAD=/path/to/bin/freecad sh tests/run.sh
 #
@@ -7,18 +7,18 @@
 # in its own FreeCAD start. Every test must say RESULT: PASS.
 #
 # Copyright (c) 2026 Marioskiv
-# https://github.com/Marioskiv/freecad-addons
+# https://github.com/Marioskiv/Knurling-Wrap
 # SPDX-License-Identifier: MIT
 set -u
 FREECAD=${FREECAD:-freecad}
 REPO=$(cd "$(dirname "$0")/.." && pwd)
-OUT=${OUT:-/tmp/freecad-addons-test}
+OUT=${OUT:-/tmp/knurling-wrap-test}
 rm -rf "$OUT"
 mkdir -p "$OUT/home"
 VER=$("$FREECAD" --version 2>/dev/null | sed -n 's/.* \([0-9][0-9]*\)\.\([0-9][0-9]*\).*/v\1-\2/p' | head -1)
 MOD="$OUT/home/.local/share/FreeCAD/${VER:-v26-3}/Mod"
 mkdir -p "$MOD"
-ln -s "$REPO" "$MOD/freecad-addons"
+ln -s "$REPO" "$MOD/Knurling-Wrap"
 
 result="RESULT: PASS"
 # Knurling & Wrap: Knurl, Wrap on a cylinder, Hole on any surface, and a file made while Knurl and
