@@ -76,5 +76,14 @@ Licence MIT (his own code, he agreed). WikiTips stays only help + error explanat
   it); "right through" goes before the thread Hole and the thread still builds on it.
 - Test `tests/surface_hole_test.py` (in run.sh): the broken solid is stood in for by a feature that
   turns its base inside out (a real one could not be reproduced without his file).
-- Not done (Marios: only a plain hole for now): screw holes M3/M4/M5, counterbore, nut pocket; moving the point
-  with the mouse after creation (Point is editable in the property view).
+- 1.1.0 (Marios: "both", A and B): property `Position` (saved Greek values `Κλικ`, `Γωνία και ύψος`,
+  `Σκαρίφημα`); A: `Axis`, `AxisCentre` (from the biggest cylindrical face along the axis, else the bounding box),
+  `Angle` (Z: 0 = +X, CCW from +Z), `Height`, `Aim` (`Προς τον άξονα` / `Κάθετα στην επιφάνεια`), `Count`,
+  `AngleStep` (0 = 360/Count); B: `Sketch`, `Reversed` (default: into the part from the sketch's +Z side, like a
+  Pocket). For A and B the hole starts where its line, coming from outside, first enters the material; depth and
+  "first empty space" count from there. Old 1.0.x holes get the new properties in `onDocumentRestored`
+  (Position Κλικ: unchanged; fixture `tests/fixtures/hole_1_0_1.FCStd`). A sketch picked in the tree inside a
+  Body comes as the Body in getSelectionEx: `_picked` falls back to getSelection().
+- On his pulley file (headless): angle 90°, height 8, 2 holes towards the axis -> open from r 21.5 to the bore at
+  90° and 270°, untouched at 0°.
+- Not done (Marios: only a plain hole for now): screw holes M3/M4/M5, counterbore, nut pocket.

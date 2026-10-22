@@ -10,7 +10,9 @@
 Clicks a part and presses the button: on the flat top, on the side of a cylinder, on a slanted
 face; the three depth modes; the panel; a part whose solid was broken by a Part Design Hole with
 "Model Thread" (Marios's pulley, 2026-10-22): the hole must go before it; a plain Part solid;
-save + reopen. Results: $PC_OUT/result.txt (+ hole_*.png).
+save + reopen. 1.1.0: angle and height round an axis (towards the axis or square to the surface,
+several holes round), holes from the circles of a sketch, a file made with 1.0.1.
+Results: $PC_OUT/result.txt (+ hole_*.png).
 """
 import faulthandler
 import math
@@ -276,8 +278,167 @@ def run():
           "holes recompute after an upstream edit")
 
 
+def empty(shape, p):
+    return not shape.isInside(p, 1e-6, True)
+
+
+def run_more():
+    from knurlwrap import hole as wh
+    from knurlwrap import knurl as wk
+
+    # A1. "angle and height" on a tube (r 22, bore 7, 20 high): click the top, switch in the panel to
+    # angle 30°, height 10, towards the axis, 2 holes: radial holes at 30° and 210°, through the wall
+    d = App.newDocument("Radial")
+    b, pad = cylinder_body(d, r=22, h=20, bore=7)
+    Gui.activeView().viewIsometric()
+    top = face_name(pad, lambda f: abs(f.CenterOfMass.z - 20) < 1e-6)
+    click(d, pad, top, V(15, 5, 20))
+    h = d.getObject("HoleOnSurface")
+    check(h is not None and h.Position == "Κλικ", "clicked hole made (Position Κλικ)")
+    if h is None:
+        return
+    check((V(h.AxisCentre) - V(0, 0, 0)).Length < 1e-6 and h.Axis == "Z", "axis found: Z through the centre")
+    panel = wh.TaskHole(h)
+    check(not panel.radial.isVisible() or panel.radial.isHidden(), "angle box hidden for a clicked hole")
+    panel.pos.setCurrentText("Γωνία και ύψος")
+    panel.angle.setValue(30)
+    panel.height.setValue(10)
+    panel.count.setValue(2)
+    pump(800)
+    check(not panel.radial.isHidden() and h.Count == 2 and "Invalid" not in h.State,
+          "panel: angle and height, 2 holes (%s)" % h.State)
+    sh = h.Shape
+    for ang in (30, 210):
+        r = V(math.cos(math.radians(ang)), math.sin(math.radians(ang)), 0)
+        check(all(empty(sh, r * t + V(0, 0, 10)) for t in (8, 12, 16, 21)),
+              "hole at %d°: open from the outside into the bore" % ang)
+    r = V(math.cos(math.radians(120)), math.sin(math.radians(120)), 0)
+    check(not empty(sh, r * 15 + V(0, 0, 10)), "no hole at 120°")
+    check(abs(pad.Shape.Volume - sh.Volume - 2 * math.pi * 1.5 ** 2 * 15) < 1.0,
+          "two Ø3 holes through the 15 mm wall (%.1f mm³)" % (pad.Shape.Volume - sh.Volume))
+    panel.step.setValue(90)
+    pump(500)
+    r = V(math.cos(math.radians(120)), math.sin(math.radians(120)), 0)
+    check(empty(h.Shape, r * 15 + V(0, 0, 10)) and not empty(h.Shape, -r * 15 + V(0, 0, 10)),
+          "angle between 90°: holes at 30° and 120°")
+    panel.accept()
+    close_panel()
+    shot("radial")
+    App.closeDocument(d.Name)
+
+    # A2. "square to the surface" on a hexagon: at 10° the ray meets the face whose normal is at 30°
+    d = App.newDocument("Hex")
+    b = d.addObject("PartDesign::Body", "Body")
+    s = b.newObject("Sketcher::SketchObject", "Sketch")
+    s.AttachmentSupport = [(b.Origin.OriginFeatures[3], "")]
+    s.MapMode = "FlatFace"
+    pts = [V(20 * math.cos(math.radians(a)), 20 * math.sin(math.radians(a)), 0) for a in range(0, 360, 60)]
+    for i in range(6):
+        s.addGeometry(Part.LineSegment(pts[i], pts[(i + 1) % 6]))
+    pad = b.newObject("PartDesign::Pad", "Pad")
+    pad.Profile = s
+    pad.Length = 10
+    d.recompute()
+    top = pad.Shape.getElement(face_name(pad, lambda f: abs(f.CenterOfMass.z - 10) < 1e-6))
+    h, _br = wh.make_hole(pad, top, V(5, 0, 10), mode="Βάθος", depth=4)
+    h.Position, h.Angle, h.Height, h.Aim = "Γωνία και ύψος", 10, 5, "Κάθετα στην επιφάνεια"
+    d.recompute()
+    n30 = V(math.cos(math.radians(30)), math.sin(math.radians(30)), 0)
+    entry = None
+    for t in [x * 0.01 for x in range(1500, 2100)]:     # where the 10° ray meets the hexagon
+        q = V(math.cos(math.radians(10)), math.sin(math.radians(10)), 0) * t + V(0, 0, 5)
+        if empty(pad.Shape, q):
+            entry = q - V(math.cos(math.radians(10)), math.sin(math.radians(10)), 0) * 0.01
+            break
+    check(entry is not None and "Invalid" not in h.State and
+          all(empty(h.Shape, entry - n30 * t) for t in (0.5, 2, 3.5)) and not empty(h.Shape, entry - n30 * 4.6),
+          "square to the hexagon face: 4 mm deep along its normal (%s)" % h.State)
+    App.closeDocument(d.Name)
+
+    # A3. the axis of a round part away from the origin is found from its cylinder
+    d = App.newDocument("Off")
+    w = d.addObject("Part::Feature", "Off")
+    w.Shape = Part.makeCylinder(10, 10, V(5, 3, 0)).cut(Part.makeCylinder(3, 10, V(5, 3, 0)))
+    d.recompute()
+    h, _br = wh.make_hole(w, next(f for f in w.Shape.Faces if abs(f.CenterOfMass.z - 10) < 1e-6), V(12, 3, 10))
+    check((V(h.AxisCentre) - V(5, 3, 0)).Length < 1e-6 and abs(h.Angle.Value) < 1e-6
+          and abs(h.Height.Value - 10) < 1e-6,
+          "off-centre round part: axis (5, 3), angle 0, height 10 from the click (%s %s %s)"
+          % (h.AxisCentre, h.Angle, h.Height))
+    App.closeDocument(d.Name)
+
+    # B. a sketch on the XZ plane with two circles (Ø4 at height 6, Ø2 at height 14), through a tube:
+    # select it in the tree, press the button: radial holes on the side the sketch faces
+    d = App.newDocument("Sk")
+    b, pad = cylinder_body(d, r=22, h=20, bore=7)
+    sk = b.newObject("Sketcher::SketchObject", "Holes")
+    sk.AttachmentSupport = [(b.Origin.OriginFeatures[4], "")]      # XZ_Plane
+    sk.MapMode = "FlatFace"
+    sk.addGeometry(Part.Circle(V(0, 6, 0), V(0, 0, 1), 2))
+    sk.addGeometry(Part.Circle(V(0, 14, 0), V(0, 0, 1), 1))
+    sk.addGeometry(Part.LineSegment(V(-30, 0, 0), V(30, 0, 0)), True)    # construction: not a hole
+    d.recompute()
+    Gui.Selection.clearSelection()
+    Gui.Selection.addSelection(d.Name, sk.Name)
+    Gui.runCommand("KnurlWrap_Hole")
+    pump(1200)
+    h = d.getObject("HoleOnSurface")
+    close_panel()
+    check(h is not None and h.Position == "Σκαρίφημα" and h.Sketch == sk and b.Tip == h, "sketch holes made")
+    if h is None:
+        return
+    into = wh.sketch_direction(sk)
+    side = -into                              # the holes come in from this side
+    sh = h.Shape
+    check(abs(abs(into.y) - 1) < 1e-9, "sketch on XZ: holes along Y (%s)" % into)
+    check(all(empty(sh, side * t + V(0, 0, z)) for t in (9, 15, 21) for z in (6, 14)) and
+          not empty(sh, -side * 15 + V(0, 0, 6)), "holes on the sketch's side only, into the bore")
+    want = math.pi * (2 ** 2 + 1 ** 2) * 15
+    check(abs(pad.Shape.Volume - sh.Volume - want) < 1.5,
+          "Ø4 and Ø2 from the circles (%.1f mm³, want %.1f)" % (pad.Shape.Volume - sh.Volume, want))
+    h.Reversed = True
+    d.recompute()
+    check(empty(h.Shape, -side * 15 + V(0, 0, 6)) and not empty(h.Shape, side * 15 + V(0, 0, 6)),
+          "Reversed: the other side")
+    h.Reversed, h.Mode = False, "Διαμπερής"
+    d.recompute()
+    check(empty(h.Shape, side * 15 + V(0, 0, 6)) and empty(h.Shape, -side * 15 + V(0, 0, 6)),
+          "right through: both walls")
+    sk.addGeometry(Part.Circle(V(5, 10, 0), V(0, 0, 1), 1.5))       # editing the sketch adds a hole
+    d.recompute()
+    check(empty(h.Shape, side * 15 + V(5, 0, 10)), "a circle added to the sketch: one more hole")
+    for i in reversed(range(len(sk.Geometry))):
+        if not sk.getConstruction(i):
+            sk.delGeometry(i)
+    d.recompute()
+    pump(500)
+    check("Invalid" in h.State and wk._TOLD is not None and "κύκλους" in wk._TOLD.text(),
+          "no circles left: refused, Greek message (%s)" % h.State)
+    wk._TOLD.close()
+    App.closeDocument(d.Name)
+
+    # C. a file made with 1.0.1 (two clicked holes) opens the same and gets the new settings
+    src = os.path.join(os.environ["PC_REPO"], "tests", "fixtures", "hole_1_0_1.FCStd")
+    path = os.path.join(OUT, "hole_1_0_1.FCStd")
+    import shutil
+    shutil.copy(src, path)
+    d = App.openDocument(path)
+    pump(800)
+    h, h2 = d.getObject("HoleOnSurface"), d.getObject("HoleOnSurface001")
+    check(h.Position == "Κλικ" and "Count" in h.PropertiesList and h2.Position == "Κλικ",
+          "1.0.1 file: holes get the new settings, Position Κλικ")
+    d.recompute()
+    for o in (h, h2):
+        o.touch()
+    d.recompute()
+    check(abs(h.Shape.Volume - 7986.029) < 0.01 and abs(h2.Shape.Volume - 7943.617) < 0.01,
+          "1.0.1 file: same holes after a recompute (%.3f, %.3f)" % (h.Shape.Volume, h2.Shape.Volume))
+    App.closeDocument(d.Name)
+
+
 try:
     run()
+    run_more()
 except Exception:
     failures += 1
     P("FAIL exception:\n" + traceback.format_exc())
