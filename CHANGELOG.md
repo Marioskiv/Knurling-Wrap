@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.1.1 — 2026-10-22: Hole, height from the middle, steady + / −
+
+Marios: "pressing + / − for the height sometimes keeps moving; I can't centre it on Z: it must start exactly
+at the middle of the part and let me move it by millimetres".
+- The panel waits until you stop changing a value (0.4 s) before it recomputes. While FreeCAD recomputed it did
+  not see the mouse let go of + / −, so the box kept counting on its own.
+- New holes: height 0 = the middle of the part along the axis (was the axis' Z 0). The panel shows the part's
+  height span, a step for + / − (0.1 / 0.5 / 1 / 5 mm) and a **Στη μέση** button. Typing a number updates once.
+- Holes made with 1.1.0 keep their place (their saved centre).
+- The same pause before recomputing in the Wrap panel (its depth + / −).
+
 ## 1.1.0 — 2026-10-22: Hole on any surface, exact position
 
 Marios: "I can't say where the hole goes, nor make it point at the centre: it needs parameters or a sketch".
